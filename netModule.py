@@ -1,5 +1,4 @@
 import socket
-import fcntl
 import struct
 import netifaces as ni
 import threading
@@ -43,13 +42,46 @@ class NetModule:
         for i in range(5):
             print('listening')
             time.sleep(1)
+            msgType = self.__socket.recv(1024)
+            print('msgType = ' + msgType.decode('utf-8'))
+
+    def send(self, data):
+        if self.__socket.fileno() == -1:
+            return -1
+        count = self.__socket.send(bytes(data, 'utf-8'))
+        print('data length = ', str(len(data)))
+        print('send length = ', str(count))
+        return count
+    
+    def close(self):
+        self.__socket.close()
         
 mode = input() 
 if mode == 's':
     net = NetModule('test')
     net.listen(8080)
+    msgType = input()
+    while True:
+        if msgType != 'e':
+            msg = input()
+            if net.send(msg) == -1:
+                net.close()
+                break
+        else:
+            net.close()
+            break
+        msgType = input()
 elif mode == 'c':
     net = NetModule('test')
     net.connect('127.0.0.1', 8080)
-
-
+    msgType = input()
+    while True:
+        if msgType != 'e':
+            msg = input()
+            if net.send(msg) == -1:
+                net.close()
+                break
+        else:
+            net.close()
+            break
+        msgType = input()
