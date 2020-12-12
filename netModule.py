@@ -21,37 +21,45 @@ class NetModule:
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__socket.connect((ip, port))
         print('Connected')
-
-#       self.__socket.sendall(b'Hello World')
-#       self.__socket.close()
+        self.__listener = threading.Thread(target=self.run)
+        self.__listener.start()
 
     def listen(self, port):
         self.__isServer = True
         self.__serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__serverSocket.bind(('', port))
         self.__serverSocket.listen(1)
+        print('listening')
         self.__socket, addr = self.__serverSocket.accept()
         self.__listener = threading.Thread(target=self.run)
         self.__listener.start()
         self.__serverSocket.close()
 
-#        print(self.__socket.recv(1024).decode('utf-8'))
-#        self.__socket.close()
-
     def run(self):
-        for i in range(5):
-            print('listening')
-            time.sleep(1)
-            msgType = self.__socket.recv(1024)
-            print('msgType = ' + msgType.decode('utf-8'))
+        while True:
+            msgType = self.recv(1)
+            print('msgType = ' + msgType)
 
     def send(self, data):
-        if self.__socket.fileno() == -1:
-            return -1
-        count = self.__socket.send(bytes(data, 'utf-8'))
-        print('data length = ', str(len(data)))
-        print('send length = ', str(count))
-        return count
+        totalsent = 0
+        while totalsent < len(data):
+            sent = self.__socket.send(bytes(data[totalsent:], 'utf-8'))
+            if sent == 0:
+                raise RuntimeError('send failed')
+            totalsent = totalsent + sent
+            print('sent: {}, totalsent: {}'.format(str(sent), str(totalsent)))
+
+    def recv(self, length):
+        data = ''
+        totalrecd = 0
+        while totalrecd < length:
+            recd = self.__socket.recv(length - totalrecd)
+            if len(recd) == 0:
+                raise RuntimeError('recv failed')
+            totalrecd = totalrecd + len(recd)
+            data = data + recd.decode('utf-8')
+            print('recd: {}, totalrecd: {}'.format(str(len(recd)), str(totalrecd)))
+        return data
     
     def close(self):
         self.__socket.close()
@@ -64,9 +72,7 @@ if mode == 's':
     while True:
         if msgType != 'e':
             msg = input()
-            if net.send(msg) == -1:
-                net.close()
-                break
+            net.send(msg)
         else:
             net.close()
             break
@@ -78,9 +84,7 @@ elif mode == 'c':
     while True:
         if msgType != 'e':
             msg = input()
-            if net.send(msg) == -1:
-                net.close()
-                break
+            net.send(msg)
         else:
             net.close()
             break
