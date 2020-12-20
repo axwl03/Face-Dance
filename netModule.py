@@ -89,29 +89,3 @@ class NetModule:
     def close(self):
         self.send('e')
         self.__socket.close()
-        
-mode = input() 
-if mode == 's':
-    net = NetModule('test')
-    net.listen(8080)
-    msgType = input()
-    while True:
-        if msgType == 'd':
-            msg = input()
-            net.sendData(msg)
-        elif msgType == 'e':
-            net.close()
-            break
-        msgType = input()
-elif mode == 'c':
-    net = NetModule('test')
-    net.connect('127.0.0.1', 8080)
-    msgType = input()
-    while True:
-        if msgType == 'd':
-            msg = input()
-            net.sendData(msg)
-        elif msgType == 'e':
-            net.close()
-            break
-        msgType = input()

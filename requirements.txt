@@ -1,0 +1,6 @@
+certifi==2020.12.5
+netifaces==0.10.9
+PyQt5==5.15.2
+PyQt5-sip==12.8.1
+shiboken2==5.15.2
+wincertstore==0.2
