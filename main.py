@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget
-from startMenu import Ui_Form
-from connectionCtrl import SecondPage
+from startMenuPage import Ui_Form
+from connection import SecondPage
 import sys
 
 class MainPage(QWidget):
@@ -8,9 +8,6 @@ class MainPage(QWidget):
         super(MainPage, self).__init__()
         self.ui = Ui_Form()
         self.ui.setupUi(self)
-        self.iniGuiEvent()
-
-    def iniGuiEvent(self):
         self.ui.pushButton.clicked.connect(self.jumpPage)
         self.ui.pushButton_2.clicked.connect(self.closescr)
 

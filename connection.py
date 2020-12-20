@@ -1,15 +1,12 @@
 from PyQt5.QtWidgets import QApplication, QWidget
-from connectionSetup import Ui2_Form
-from gameCtrl import ThirdPage
+from connectionSetupPage import Ui2_Form
+from game import ThirdPage
 
 class SecondPage(QWidget):
     def __init__(self):
         super(SecondPage, self).__init__()
         self.ui = Ui2_Form()
         self.ui.setupUi(self) # self = Form
-        self.iniGuiEvent()
-
-    def iniGuiEvent(self):
         self.ui.pushButton.clicked.connect(self.chooseServer)
         self.ui.pushButton_2.clicked.connect(self.chooseClient)
 
