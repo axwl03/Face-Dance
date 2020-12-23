@@ -10,8 +10,9 @@ class ImgModule:
         print('loading....')
         self.__cap = cv2.VideoCapture(0)
         self.__interval = 0.03 # 30ms
-        self.__emotionMap = {0: 'None', 1: 'Angry', 2: 'Happy', 3: 'Sad', 4: 'Surprise'}
-        self.__model = keras.models.load_model('weights-50-0.87.h5', compile=False)
+        #self.__emotionMap = {0: 'None', 1: 'Angry', 2: 'Happy', 3: 'Sad', 4: 'Surprise'}
+        self.__emotionMap = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5:'Surprise', 6:'None'}
+        self.__model = keras.models.load_model('weights-50-0.78.h5', compile=False)
         self.__captureThread = threading.Thread(target=self.capture)
 
 
@@ -39,7 +40,7 @@ class ImgModule:
                 self.frame = img
                 img = cv2.cvtColor(cv2.resize(img, (48, 48)), cv2.COLOR_BGR2GRAY)
                 if(self.__writeLegal):
-                    self.__inputImg = np.reshape(img, (1, 48, 48, 1))
+                    self.__inputImg = np.reshape(img, (1, 48, 48, 1)) / 255.0
             else:
                 print('Error in img capture')
     
@@ -47,6 +48,7 @@ class ImgModule:
         while(self.__predictLegal):
             self.__writeLegal = False
             self.state = self.__model.predict_classes(self.__inputImg)[0]
+
             print('res : {}'.format(self.__emotionMap[self.state]))
             self.__writeLegal = True
             time.sleep(self.__interval)
@@ -73,8 +75,8 @@ class ImgModule:
         self.__capLegal = True
         self.__predictLegal = True
 
-imgModule = ImgModule()
-imgModule.start()
+#imgModule = ImgModule()
+#imgModule.start()
 
 
 
