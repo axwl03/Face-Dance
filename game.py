@@ -7,7 +7,6 @@ import random
 import time
 
 class ThirdPage(QWidget):
-class ThirdPage():
     maxEmojiNum = 8
     maxEmojiGen = 1
     maxX = 450
@@ -40,17 +39,14 @@ class ThirdPage():
             self.__net.listen(self.__port)
         else:
             self.__net.connect(self.ip, self.__port)
-
-        while True:
-            msg = input()
-            if msg != 'exit':
-                self.__net.sendData(msg)
-            else:
-                self.__net.close()
-                break
-        
         startTime = time.time()
-        self.__action()
+        if self.isServer == True:
+            while True:
+                msg = input()
+                self.__action()
+                if msg == 'exit':
+                    self.__net.close()
+                    break
 
     def __action(self):
         if self.isServer == True:
@@ -64,13 +60,17 @@ class ThirdPage():
 
             # randomly generate emoji and append to myEmojiList
             self.__randomGenEmoji()
-            self.__mutex.acquire()
             for emoji in self.__emojiList:
                 newEmoji = Emoji(emoji.getX() + self.myOffsetX, emoji.getY() + self.myOffsetY, emoji.getType())
                 self.__myEmojiList.append(newEmoji)
-            self.__mutex.release()
 
-            # send exist emojiList and our score
+            # send new emojiList
+            data = 'new\n'
+            for emoji in self.__emojiList:
+                data = data + emoji.toString() + '\n'
+            self.__net.sendData(data)
+
+            #  send our score
 
     # set result that predicted by image module
     def setResult(self, emojiType):
@@ -87,9 +87,10 @@ class ThirdPage():
             tempList = []
             for i in range(self.maxEmojiGen):
                 tempList.append(Emoji(random.randint(0, self.maxX), 0, random.randint(1, Emoji.SURPRISE)))
-            self.__mutex.acquire()
             self.__emojiList = tempList
-            self.__mutex.release()
+
+    def myEmojiAdd(self, emoji):
+        self.__myEmojiList.append(emoji)
 
     def printEmojiList(self):
         print('len: ', len(self.__myEmojiList))

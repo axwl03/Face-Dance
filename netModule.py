@@ -3,6 +3,7 @@ import struct
 import netifaces as ni
 import threading
 import time
+from emoji import Emoji
 
 class NetModule:
     def __init__(self, ui):
@@ -46,12 +47,22 @@ class NetModule:
                     length = int.from_bytes(self.recv(4, True), byteorder='little')
                     data = self.recv(length)
                     print('Data = ' + data)
+                    self.__handleData(data)
                 elif msgType == 'i':    # image
                     pass
             self.__socket.close()
         except:
             pass
         print('connection closed')
+
+    def __handleData(self, data):
+        data = data.rstrip().split('\n')
+        if data[0] == 'new':
+            for emojiData in data[1:]:
+                emoji = Emoji.parseString(emojiData)
+                emoji.setX(emoji.getX() + str(self.ui.myOffsetX))
+                emoji.setY(emoji.getY() + str(self.ui.myOffsetY))
+                self.ui.myEmojiAdd(emoji)
 
     def send(self, data, isByte=False):
         totalsent = 0
