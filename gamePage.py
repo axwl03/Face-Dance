@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'game.ui'
+# Form implementation generated from reading ui file 'gamePage.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.1
 #
@@ -43,8 +43,11 @@ class Ui3_Form(object):
         self.lcdNumber_3.setFont(font)
         self.lcdNumber_3.setObjectName("lcdNumber_3")
         self.label = QtWidgets.QLabel(Form)
-        self.label.setGeometry(QtCore.QRect(520, 340, 58, 15))
+        self.label.setGeometry(QtCore.QRect(650, 130, 58, 15))
         self.label.setObjectName("label")
+        self.graphicsView = QtWidgets.QGraphicsView(Form)
+        self.graphicsView.setGeometry(QtCore.QRect(20, 160, 1031, 591))
+        self.graphicsView.setObjectName("graphicsView")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
