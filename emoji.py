@@ -41,4 +41,4 @@ class Emoji:
     @staticmethod
     def parseString(string):
         data = string.split()
-        return Emoji(data[0], data[1], data[2])
+        return Emoji(int(data[0]), int(data[1]), int(data[2]))

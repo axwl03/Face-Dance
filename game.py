@@ -22,6 +22,8 @@ class ThirdPage(QWidget):
         self.isServer = isServer
         self.ip = ip
         self.ui.label.setText(str(self.ip))
+        self.__myScore = 0
+        self.__enemyScore = 0
 
         self.__matchedEmoji = Emoji.NONE
         self.__faceImage = None
@@ -31,14 +33,21 @@ class ThirdPage(QWidget):
 
         self.__net = NetModule(self)
         self.__mutex = threading.Lock()
+
+        # TODO: this should be called after start button has been
+        # clicked and is in the slot for the start button clicked signal
         self.__runner = threading.Thread(target=self.startGame)
         self.__runner.start()
 
     def startGame(self):
+
+        # TODO: the code to establish connection should move into 
+        # contructor before the start button is enabled
         if self.isServer == True:
             self.__net.listen(self.__port)
         else:
             self.__net.connect(self.ip, self.__port)
+        
         startTime = time.time()
         if self.isServer == True:
             while True:
@@ -48,6 +57,7 @@ class ThirdPage(QWidget):
                     self.__net.close()
                     break
 
+    # TODO: this function should move into startGame function
     def __action(self):
         if self.isServer == True:
             # remove emoji if it exceeds boundary + 20
@@ -71,6 +81,20 @@ class ThirdPage(QWidget):
             self.__net.sendData(data)
 
             #  send our score
+            data = 'score\n' + str(self.__myScore) + '\n'
+            self.__net.sendData(data)
+        else:
+            # remove emoji if it exceeds boundary + 20
+            i = 0
+            while i < len(self.__myEmojiList):
+                if self.__myEmojiList[i].getY() > self.maxY + self.myOffsetY + 20:
+                    del self.__myEmojiList[i]
+                    continue
+                i = i + 1
+
+            # send score to enemy
+            data = 'score\n' + str(self.__myScore) + '\n'
+            self.__net.sendData(data)
 
     # set result that predicted by image module
     def setResult(self, emojiType):
@@ -91,6 +115,9 @@ class ThirdPage(QWidget):
 
     def myEmojiAdd(self, emoji):
         self.__myEmojiList.append(emoji)
+
+    def setEnemyScore(self, score):
+        self.__enemyScore = score
 
     def printEmojiList(self):
         print('len: ', len(self.__myEmojiList))

@@ -48,10 +48,9 @@ class NetModule:
                     data = self.recv(length)
                     print('Data = ' + data)
                     self.__handleData(data)
-                elif msgType == 'i':    # image
-                    pass
             self.__socket.close()
-        except:
+        except Exception as e:
+            print('error in NetModule.__run():', e)
             pass
         print('connection closed')
 
@@ -60,9 +59,11 @@ class NetModule:
         if data[0] == 'new':
             for emojiData in data[1:]:
                 emoji = Emoji.parseString(emojiData)
-                emoji.setX(emoji.getX() + str(self.ui.myOffsetX))
-                emoji.setY(emoji.getY() + str(self.ui.myOffsetY))
+                emoji.setX(emoji.getX() + self.ui.myOffsetX)
+                emoji.setY(emoji.getY() + self.ui.myOffsetY)
                 self.ui.myEmojiAdd(emoji)
+        elif data[0] == 'score':
+            self.ui.setEnemyScore(int(data[1]))
 
     def send(self, data, isByte=False):
         totalsent = 0
