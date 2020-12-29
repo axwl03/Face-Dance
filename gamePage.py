@@ -13,6 +13,7 @@ from emoji import Emoji
 
 class GamePage(QWidget):
     # changePixmapItem = pyqtSignal(QImage)
+    renderSignal = pyqtSignal()
     maxEmojiNum = 8
     maxEmojiGen = 1
     maxX = 450
@@ -36,6 +37,7 @@ class GamePage(QWidget):
         self.setWindowTitle("Game Page")
         
         # self.changePixmapItem.connect(self.setFaceImage)
+        self.renderSignal.connect(self.__renderEmojiAction)
         self.__isServer = isServer
         self.__ip = ip
         self.__myScore = 0
@@ -89,10 +91,13 @@ class GamePage(QWidget):
     def startGame(self):
         if self.__isServer == True:
             self.__net.listen(self.__port)
+            self.__status = 1
             self.__action()
         else:
             self.__net.connect(self.ip, self.__port)
+            self.__status = 1
             self.__action()
+        self.__renderEmoji()
 
     def __action(self):
         if self.__isServer == True:
@@ -154,11 +159,15 @@ class GamePage(QWidget):
         self.__faceImage.setPixmap(QPixmap.fromImage(image))
 
     def __renderEmoji(self):
-        while self.__status != 2:
-            if self.__status == 1:
-                for emoji in self.__myEmojiList:
-                    self.setEmoji(emoji)
-            time.sleep(0.5)
+        self.renderSignal.emit()
+        self.__renderEmojiRunner = threading.Timer(0.5, self.__renderEmoji)
+        self.__renderEmojiRunner.start()
+
+    @pyqtSlot()
+    def __renderEmojiAction(self):
+        if self.__status == 1:
+            for emoji in self.__myEmojiList:
+                self.setEmoji(emoji)
     
     # set emoji or add emoji on screen
     def setEmoji(self, e):
@@ -199,6 +208,7 @@ class GamePage(QWidget):
     def closeEvent(self, event):
         self.__status = 2
         self.__actioner.cancel()
+        self.__renderEmojiRunner.cancel()
         try:
             self.__net.close()
         except:
