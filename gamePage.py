@@ -25,6 +25,7 @@ class GamePage(QWidget):
     height = 767
 
     def __init__(self, isServer, ip):
+        self.__status = 0   # 0: not started, 1: started, 2: ended
         self.__font = QFont()
         self.__font.setFamily("Arial Black")
         self.__font.setPointSize(18)
@@ -88,48 +89,50 @@ class GamePage(QWidget):
     def startGame(self):
         if self.__isServer == True:
             self.__net.listen(self.__port)
-            self.__renderEmojiRunner = threading.Thread(target=self.__renderEmoji)
-            self.__renderEmojiRunner.start()
-            while True:
-                # remove emoji if it exceeds boundary + 20
-                i = 0
-                while i < len(self.__myEmojiList):
-                    if self.__myEmojiList[i].getY() > self.maxY + self.myOffsetY + 20:
-                        del self.__myEmojiList[i]
-                        continue
-                    i = i + 1
-
-                # randomly generate emoji and append to myEmojiList
-                self.__randomGenEmoji()
-                for emoji in self.__emojiList:
-                    newEmoji = Emoji(emoji.getX() + self.myOffsetX, emoji.getY() + self.myOffsetY, emoji.getType())
-                    self.__myEmojiList.append(newEmoji)
-
-                # send new emojiList
-                data = 'new\n'
-                for emoji in self.__emojiList:
-                    data = data + emoji.toString() + '\n'
-                self.__net.sendData(data)
-
-                #  send our score
-                data = 'score\n' + str(self.__myScore) + '\n'
-                self.__net.sendData(data)
+            self.__action()
         else:
             self.__net.connect(self.ip, self.__port)
-            self.__renderEmojiRunner = threading.Thread(target=self.__renderEmoji)
-            self.__renderEmojiRunner.start()
-            while True:
-                # remove emoji if it exceeds boundary + 20
-                i = 0
-                while i < len(self.__myEmojiList):
-                    if self.__myEmojiList[i].getY() > self.maxY + self.myOffsetY + 20:
-                        del self.__myEmojiList[i]
-                        continue
-                    i = i + 1
+            self.__action()
 
-                # send score to enemy
-                data = 'score\n' + str(self.__myScore) + '\n'
-                self.__net.sendData(data)
+    def __action(self):
+        if self.__isServer == True:
+            # remove emoji if its status is 2 (out)
+            i = 0
+            while i < len(self.__myEmojiList):
+                if self.__myEmojiList[i].getStatus() == 2:
+                    del self.__myEmojiList[i]
+                    continue
+                i = i + 1
+
+            # randomly generate emoji and append to myEmojiList
+            self.__randomGenEmoji()
+            for emoji in self.__emojiList:
+                newEmoji = Emoji(emoji.getX() + self.myOffsetX, emoji.getY() + self.myOffsetY, emoji.getType())
+                self.__myEmojiList.append(newEmoji)
+
+            # send new emojiList
+            data = 'new\n'
+            for emoji in self.__emojiList:
+                data = data + emoji.toString() + '\n'
+            self.__net.sendData(data)
+
+            #  send our score
+            data = 'score\n' + str(self.__myScore) + '\n'
+            self.__net.sendData(data)
+        else:
+            # remove emoji if its status is 2 (out)
+            i = 0
+            while i < len(self.__myEmojiList):
+                if self.__myEmojiList[i].getStatus() == 2:
+                    del self.__myEmojiList[i]
+                    continue
+                i = i + 1
+
+            # send score to enemy
+            data = 'score\n' + str(self.__myScore) + '\n'
+            self.__net.sendData(data)
+        self.__actioner = threading.Timer(1, self.__action)
+        self.__actioner.start()
  
     # set result that predicted by image module
     def setResult(self, emojiType):
@@ -151,7 +154,11 @@ class GamePage(QWidget):
         self.__faceImage.setPixmap(QPixmap.fromImage(image))
 
     def __renderEmoji(self):
-        pass
+        while self.__status != 2:
+            if self.__status == 1:
+                for emoji in self.__myEmojiList:
+                    self.setEmoji(emoji)
+            time.sleep(0.5)
     
     # set emoji or add emoji on screen
     def setEmoji(self, e):
@@ -167,7 +174,7 @@ class GamePage(QWidget):
             if e.getY() > self.myOffsetY + self.maxY:
                 e.setStatus(2)
         else:   # out
-            pass
+            self.__scene.removeItem(e.graphicPixmapItem)
             
     def __randomGenEmoji(self):
         if len(self.__emojiList) >= self.maxEmojiNum:
@@ -188,3 +195,12 @@ class GamePage(QWidget):
         print('len: ', len(self.__myEmojiList))
         for emoji in self.__myEmojiList:
             print('{},{} {}'.format(emoji.getX(), emoji.getY(), emoji.getType()))
+
+    def closeEvent(self, event):
+        self.__status = 2
+        self.__actioner.cancel()
+        try:
+            self.__net.close()
+        except:
+            pass
+        event.accept()
