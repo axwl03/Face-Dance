@@ -9,10 +9,10 @@ import random
 
 from netModule import NetModule
 from emoji import Emoji
-# from imageModule import ImgModule
+from imageModule import ImgModule
 
 class GamePage(QWidget):
-    # changePixmapItem = pyqtSignal(QImage)
+    changePixmapItem = pyqtSignal(QImage)
     renderSignal = pyqtSignal()
     maxEmojiNum = 8
     maxEmojiGen = 1
@@ -25,7 +25,7 @@ class GamePage(QWidget):
     width = 1078
     height = 767
 
-    def __init__(self, isServer, ip):
+    def __init__(self, isServer, ip, camera):
         self.__status = 0   # 0: not started, 1: started, 2: ended
         self.__font = QFont()
         self.__font.setFamily("Arial Black")
@@ -36,7 +36,7 @@ class GamePage(QWidget):
         self.resize(self.width, self.height)
         self.setWindowTitle("Game Page")
         
-        # self.changePixmapItem.connect(self.setFaceImage)
+        self.changePixmapItem.connect(self.setFaceImage)
         self.renderSignal.connect(self.__renderEmojiAction)
         self.__isServer = isServer
         self.__ip = ip
@@ -51,6 +51,7 @@ class GamePage(QWidget):
         self.__scene = QGraphicsScene(self)
         self.__scene.setSceneRect(0, 0, 1000, 589)
         self.__graphicsView.setScene(self.__scene)
+
         self.__faceImage = QGraphicsPixmapItem()
         self.__faceImage.setPos(50, 50)
         self.__scene.addItem(self.__faceImage)
@@ -60,22 +61,22 @@ class GamePage(QWidget):
         self.__myEmojiList = []
         self.__port = 8080
 
-        # self.__faceImageThread = threading.Thread(target=self.convertFaceImage)
+        self.__camera = camera
 
-        self.__net = NetModule(self)
-        self.__runner = threading.Thread(target=self.startGame)
-        self.__runner.start()
+        self.__CFIrunner = threading.Timer(1, self.convertFaceImage)
+
+        # self.__net = NetModule(self)
+        # self.__runner = threading.Thread(target=self.startGame)
+        # self.__runner.start()
     
         # self.__camera.frame = None # for setFaceImage
         # self.__camera.state = 'None' # for setResult
-
         # e = Emoji(200, 200, Emoji.ANGRY)
         # self.setEmoji(e)
 
-        # self.__camera = ImgModule()
         # self.__camera.setFPS(1)
-        # self.__camera.start()
-        # self.__faceImageThread.start()
+        self.__camera.start()
+        self.__CFIrunner.start()
 
     def createLCD(self):
         self.__lcd = QLCDNumber(self)
@@ -152,7 +153,6 @@ class GamePage(QWidget):
             convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
             p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
             self.changePixmapItem.emit(p)
-            time.sleep(0.1)
 
     @pyqtSlot(QImage)
     def setFaceImage(self, image):
@@ -207,8 +207,13 @@ class GamePage(QWidget):
 
     def closeEvent(self, event):
         self.__status = 2
-        self.__actioner.cancel()
-        self.__renderEmojiRunner.cancel()
+        # self.__actioner.cancel()
+        # self.__renderEmojiRunner.cancel()
+        self.__CFIrunner.cancel()
+        self.__camera.stop()
+        self.__camera.release()
+        self.__camera.captureThread.cancel()
+        self.__camera.predictThread.cancel()
         try:
             self.__net.close()
         except:

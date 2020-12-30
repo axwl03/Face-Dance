@@ -5,7 +5,9 @@ from PyQt5.QtGui import QFont
 from gamePage import GamePage
 
 class ConnectionSetupPage(QWidget):
-    def __init__(self):
+    def __init__(self, camera):
+        self.camera = camera
+        
         self.__WIDTH = 341
         self.__HEIGHT = 311
         self.__font = QFont()
@@ -41,13 +43,13 @@ class ConnectionSetupPage(QWidget):
     def chooseServer(self):
         self.__isServer = 1
         self.__ip = -1
-        self.__nextPage = GamePage(self.__isServer, self.__ip)
+        self.__nextPage = GamePage(self.__isServer, self.__ip, self.camera)
         self.hide()
         self.__nextPage.show()
 
     def chooseClient(self):
         self.__isServer = 0
         self.__ip = self.__lineEdit.text()
-        self.__nextPage = GamePage(self.__isServer, self.__ip)
+        self.__nextPage = GamePage(self.__isServer, self.__ip, self.camera)
         self.hide()
         self.__nextPage.show()
