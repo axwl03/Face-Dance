@@ -21,32 +21,16 @@ class ImgModule:
 
         self.loadModelThread = threading.Thread(target=self.load)
 
-        self.captureThread = threading.Timer(0.5, self.capture)
-
-        self.predictThread = threading.Timer(1, self.predict)
-        
-
         self.__lock = threading.Lock()
         self.__lock2 = threading.Lock()
 
         self.frame = None # for setFaceImage
         self.state = 'None'# for setResult
 
-
         self.__inputImg = None
-
         self.__capLegal = True
         self.__predictLegal = False
-        self.__writeLegal = True
-        
-    
-    def start(self):
-
-        self.captureThread.start()
-        # self.__loadModelThread.start()
-        # time.sleep(3)
-        # self.predict()
-        # self.predictThread.start()
+        self.__writeLegal = True 
 
     def load(self):
         print('loading....')
@@ -63,10 +47,9 @@ class ImgModule:
 
     def capture(self):
         self.__lock.acquire()
-        while(self.__capLegal):
+        if(self.__capLegal):
             ret, img = self.__cap.read()
             self.__lock.release()
-
             if(ret == True):
                 self.frame = img
                 img = cv2.cvtColor(cv2.resize(img, (48, 48)), cv2.COLOR_BGR2GRAY)
@@ -74,13 +57,16 @@ class ImgModule:
                     self.__inputImg = np.reshape(img, (1, 48, 48, 1)) / 255.0
             else:
                 print('Error in img capture')
-            self.__lock.acquire()
-        self.__lock.release()
+        else:
+            self.__lock.release()
+        self.captureThread = threading.Timer(0.5, self.capture)
+        self.captureThread.start()
 
     def predict(self):
-        while(self.__predictLegal):
+        self.__lock2.acquire()
+        if(self.__predictLegal):
+            self.__lock2.release()
             self.__writeLegal = False
-
             with self.__graph.as_default():
                 with self.__thread_session.as_default():
                     self.state = self.__model.predict_classes(self.__inputImg)[0]
@@ -89,7 +75,10 @@ class ImgModule:
 
             self.__writeLegal = True
             # time.sleep(self.__interval)
-            time.sleep(1)
+        else:
+            self.__lock2.release()
+        self.predictThread = threading.Timer(1, self.predict)
+        self.predictThread.start()
 
     def setFPS(self, f):
         if(f <= 100 and f > 0):
@@ -100,7 +89,6 @@ class ImgModule:
         else:
             print('FPS should be <= 100!')
             self.__interval = 100
-
 
     def release(self):
         self.__cap.release()

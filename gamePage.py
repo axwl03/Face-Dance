@@ -74,8 +74,8 @@ class GamePage(QWidget):
         # e = Emoji(200, 200, Emoji.ANGRY)
         # self.setEmoji(e)
 
-        # self.__camera.setFPS(1)
-        self.__camera.start()
+        self.__camera.setFPS(1)
+        self.__camera.capture()
         self.__CFIrunner.start()
 
     def createLCD(self):
@@ -213,7 +213,7 @@ class GamePage(QWidget):
         self.__camera.stop()
         self.__camera.release()
         self.__camera.captureThread.cancel()
-        self.__camera.predictThread.cancel()
+        #self.__camera.predictThread.cancel()
         try:
             self.__net.close()
         except:
