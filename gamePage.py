@@ -94,48 +94,54 @@ class GamePage(QWidget):
             self.__status = 1
             self.__action()
         else:
-            self.__net.connect(self.ip, self.__port)
+            self.__net.connect(self.__ip, self.__port)
             self.__status = 1
             self.__action()
         self.__renderEmoji()
 
     def __action(self):
-        if self.__isServer == True:
-            # remove emoji if its status is 2 (out)
-            i = 0
-            while i < len(self.__myEmojiList):
-                if self.__myEmojiList[i].getStatus() == 2:
-                    del self.__myEmojiList[i]
-                    continue
-                i = i + 1
+        if self.__status == 2:   # game ended
+            return
+        try:
+            if self.__isServer == True:
+                # remove emoji if its status is 2 (out)
+                i = 0
+                while i < len(self.__myEmojiList):
+                    if self.__myEmojiList[i].getStatus() == 2:
+                        del self.__myEmojiList[i]
+                        continue
+                    i = i + 1
 
-            # randomly generate emoji and append to myEmojiList
-            self.__randomGenEmoji()
-            for emoji in self.__emojiList:
-                newEmoji = Emoji(emoji.getX() + self.myOffsetX, emoji.getY() + self.myOffsetY, emoji.getType())
-                self.__myEmojiList.append(newEmoji)
+                # randomly generate emoji and append to myEmojiList
+                self.__randomGenEmoji()
+                for emoji in self.__emojiList:
+                    newEmoji = Emoji(emoji.getX() + self.myOffsetX, emoji.getY() + self.myOffsetY, emoji.getType())
+                    self.__myEmojiList.append(newEmoji)
 
-            # send new emojiList
-            data = 'new\n'
-            for emoji in self.__emojiList:
-                data = data + emoji.toString() + '\n'
-            self.__net.sendData(data)
+                # send new emojiList
+                data = 'new\n'
+                for emoji in self.__emojiList:
+                    data = data + emoji.toString() + '\n'
+                self.__net.sendData(data)
 
-            #  send our score
-            data = 'score\n' + str(self.__myScore) + '\n'
-            self.__net.sendData(data)
-        else:
-            # remove emoji if its status is 2 (out)
-            i = 0
-            while i < len(self.__myEmojiList):
-                if self.__myEmojiList[i].getStatus() == 2:
-                    del self.__myEmojiList[i]
-                    continue
-                i = i + 1
+                #  send our score
+                data = 'score\n' + str(self.__myScore) + '\n'
+                self.__net.sendData(data)
+            else:
+                # remove emoji if its status is 2 (out)
+                i = 0
+                while i < len(self.__myEmojiList):
+                    if self.__myEmojiList[i].getStatus() == 2:
+                        del self.__myEmojiList[i]
+                        continue
+                    i = i + 1
 
-            # send score to enemy
-            data = 'score\n' + str(self.__myScore) + '\n'
-            self.__net.sendData(data)
+                # send score to enemy
+                data = 'score\n' + str(self.__myScore) + '\n'
+                self.__net.sendData(data)
+        except Exception as e:
+            self.__status = 2
+            print('error in __action():', e)
         self.__actioner = threading.Timer(1, self.__action)
         self.__actioner.start()
  
@@ -160,7 +166,7 @@ class GamePage(QWidget):
 
     def __renderEmoji(self):
         self.renderSignal.emit()
-        self.__renderEmojiRunner = threading.Timer(0.5, self.__renderEmoji)
+        self.__renderEmojiRunner = threading.Timer(0.04, self.__renderEmoji)
         self.__renderEmojiRunner.start()
 
     @pyqtSlot()
