@@ -24,13 +24,21 @@ class ImgModule:
         self.__lock = threading.Lock()
         self.__lock2 = threading.Lock()
 
-        self.frame = None # for setFaceImage
+        self.frame = np.array([]) # for setFaceImage
         self.state = 'None'# for setResult
 
         self.__inputImg = None
         self.__capLegal = True
         self.__predictLegal = False
         self.__writeLegal = True 
+        
+    
+    def start(self):
+        self.captureThread.start()
+        # self.__loadModelThread.start()
+        # time.sleep(3)
+        # self.predict()
+        # self.predictThread.start()
 
     def load(self):
         print('loading....')

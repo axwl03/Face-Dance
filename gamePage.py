@@ -74,9 +74,11 @@ class GamePage(QWidget):
         # e = Emoji(200, 200, Emoji.ANGRY)
         # self.setEmoji(e)
 
+
         self.__camera.setFPS(1)
         self.__camera.capture()
         self.__CFIrunner.start()
+
 
     def createLCD(self):
         self.__lcd = QLCDNumber(self)
@@ -95,7 +97,7 @@ class GamePage(QWidget):
             self.__status = 1
             self.__action()
         else:
-            self.__net.connect(self.ip, self.__port)
+            self.__net.connect(self.__ip, self.__port)
             self.__status = 1
             self.__action()
         self.__renderEmoji()
@@ -160,7 +162,7 @@ class GamePage(QWidget):
 
     def __renderEmoji(self):
         self.renderSignal.emit()
-        self.__renderEmojiRunner = threading.Timer(0.5, self.__renderEmoji)
+        self.__renderEmojiRunner = threading.Timer(0.04, self.__renderEmoji)
         self.__renderEmojiRunner.start()
 
     @pyqtSlot()
@@ -209,6 +211,7 @@ class GamePage(QWidget):
         self.__status = 2
         # self.__actioner.cancel()
         # self.__renderEmojiRunner.cancel()
+
         self.__CFIrunner.cancel()
         self.__camera.stop()
         self.__camera.release()
