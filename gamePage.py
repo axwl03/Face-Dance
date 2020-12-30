@@ -63,7 +63,7 @@ class GamePage(QWidget):
 
         self.__camera = camera
 
-        self.__CFIrunner = threading.Timer(1, self.convertFaceImage)
+        # self.__CFIrunner = threading.Timer(1, self.convertFaceImage)
 
         # self.__net = NetModule(self)
         # self.__runner = threading.Thread(target=self.startGame)
@@ -77,7 +77,9 @@ class GamePage(QWidget):
 
         self.__camera.setFPS(1)
         self.__camera.capture()
-        self.__CFIrunner.start()
+        self.__camera.predict()
+        # self.__CFIrunner.start()
+        self.__convertFaceImage()
 
 
     def createLCD(self):
@@ -153,14 +155,16 @@ class GamePage(QWidget):
         self.__matchedEmoji = emojiType
 
     # set face image which is obtained from webcam
-    def convertFaceImage(self):
-        while self.__camera.frame.all() != None:
+    def __convertFaceImage(self):
+        if(self.__camera.frame.size != 0):
             rgbImage = cv2.cvtColor(self.__camera.frame, cv2.COLOR_BGR2RGB)
             h, w, ch = rgbImage.shape
             bytesPerLine = ch * w
             convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
             p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
             self.changePixmapItem.emit(p)
+            self.__CFIRunner = threading.Timer(0.04, self.__convertFaceImage)
+            self.__CFIRunner.start()
 
     @pyqtSlot(QImage)
     def setFaceImage(self, image):
@@ -218,11 +222,11 @@ class GamePage(QWidget):
         # self.__actioner.cancel()
         # self.__renderEmojiRunner.cancel()
 
-        self.__CFIrunner.cancel()
+        self.__CFIRunner.cancel()
         self.__camera.stop()
         self.__camera.release()
         self.__camera.captureThread.cancel()
-        #self.__camera.predictThread.cancel()
+        self.__camera.predictThread.cancel()
         try:
             self.__net.close()
         except:

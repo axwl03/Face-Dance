@@ -31,14 +31,6 @@ class ImgModule:
         self.__capLegal = True
         self.__predictLegal = False
         self.__writeLegal = True 
-        
-    
-    def start(self):
-        self.captureThread.start()
-        # self.__loadModelThread.start()
-        # time.sleep(3)
-        # self.predict()
-        # self.predictThread.start()
 
     def load(self):
         print('loading....')
@@ -67,7 +59,7 @@ class ImgModule:
                 print('Error in img capture')
         else:
             self.__lock.release()
-        self.captureThread = threading.Timer(0.5, self.capture)
+        self.captureThread = threading.Timer(0.04, self.capture)
         self.captureThread.start()
 
     def predict(self):
