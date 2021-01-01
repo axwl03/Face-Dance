@@ -9,6 +9,7 @@ class NetModule:
     def __init__(self, ui):
         self.ui = ui
         self.__isServer = False
+        self.__listening = False
 
     def isServer(self):
         return self.__isServer
@@ -20,6 +21,8 @@ class NetModule:
     def connect(self, ip, port):
         self.__isServer = False
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if ip == '':
+            ip = '127.0.0.1'
         self.__socket.connect((ip, port))
         print('Connected')
         self.__listener = threading.Thread(target=self.__run)
@@ -29,6 +32,7 @@ class NetModule:
         self.__isServer = True
         self.__serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__serverSocket.bind(('', port))
+        self.__listening = True
         self.__serverSocket.listen(1)
         print('listening')
         self.__socket, addr = self.__serverSocket.accept()
@@ -51,7 +55,6 @@ class NetModule:
             self.__socket.close()
         except Exception as e:
             print('error in NetModule.__run():', e)
-            pass
         print('connection closed')
 
     def __handleData(self, data):
@@ -101,3 +104,10 @@ class NetModule:
     def close(self):
         self.send('e')
         self.__socket.close()
+
+    def stopListen(self):
+        self.__serverSocket.close()
+        self.__listening = False
+
+    def isListening(self):
+        return self.__listening

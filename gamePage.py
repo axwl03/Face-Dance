@@ -9,7 +9,6 @@ import random
 
 from netModule import NetModule
 from emoji import Emoji
-from imageModule import ImgModule
 
 class GamePage(QWidget):
     changePixmapItem = pyqtSignal(QImage)
@@ -21,7 +20,7 @@ class GamePage(QWidget):
     myOffsetX = 500
     myOffsetY = 200
     duration = 30
-    shift = 2
+    shift = 4
     width = 1078
     height = 767
 
@@ -43,8 +42,6 @@ class GamePage(QWidget):
         self.__myScore = 0
         self.__enemyScore = 0
 
-        self.__label = QLabel(str(self.__ip), self)
-        self.__label.setGeometry(QRect(650, 130, 58, 15))
         self.createLCD()
         self.__graphicsView = QGraphicsView(self)
         self.__graphicsView.setGeometry(QRect(20, 160, 1031, 591))
@@ -59,50 +56,53 @@ class GamePage(QWidget):
         self.__matchedEmoji = Emoji.NONE
         self.__emojiList = []
         self.__myEmojiList = []
+        self.__myEmojiListLock = threading.Lock()
         self.__port = 8080
 
         self.__camera = camera
 
         # self.__CFIrunner = threading.Timer(1, self.convertFaceImage)
 
-        # self.__net = NetModule(self)
-        # self.__runner = threading.Thread(target=self.startGame)
-        # self.__runner.start()
+        self.__net = NetModule(self)
+        self.__runner = threading.Thread(target=self.startGame)
+        self.__runner.start()
     
         # self.__camera.frame = None # for setFaceImage
         # self.__camera.state = 'None' # for setResult
-        # e = Emoji(200, 200, Emoji.ANGRY)
-        # self.setEmoji(e)
 
-
+        '''
         self.__camera.setFPS(1)
         self.__camera.capture()
         self.__camera.predict()
+        '''
         # self.__CFIrunner.start()
-        self.__convertFaceImage()
+        #self.__convertFaceImage()
 
 
     def createLCD(self):
-        self.__lcd = QLCDNumber(self)
-        self.__lcd.setGeometry(QRect(470, 60, 151, 91))
-        self.__lcd.setFont(self.__font)
-        self.__lcd2 = QLCDNumber(self)
-        self.__lcd2.setGeometry(QRect(800, 100, 121, 51))
-        self.__lcd2.setFont(self.__font)
-        self.__lcd3 = QLCDNumber(self)
-        self.__lcd3.setGeometry(QRect(170, 100, 121, 51))
-        self.__lcd3.setFont(self.__font)
+        self.__timeLCD = QLCDNumber(self)
+        self.__timeLCD.setGeometry(QRect(470, 60, 151, 91))
+        self.__timeLCD.setFont(self.__font)
+        self.__enemyScoreLCD = QLCDNumber(self)
+        self.__enemyScoreLCD.setGeometry(QRect(800, 100, 121, 51))
+        self.__enemyScoreLCD.setFont(self.__font)
+        self.__myScoreLCD = QLCDNumber(self)
+        self.__myScoreLCD.setGeometry(QRect(170, 100, 121, 51))
+        self.__myScoreLCD.setFont(self.__font)
 
     def startGame(self):
-        if self.__isServer == True:
-            self.__net.listen(self.__port)
-            self.__status = 1
-            self.__action()
-        else:
-            self.__net.connect(self.__ip, self.__port)
-            self.__status = 1
-            self.__action()
-        self.__renderEmoji()
+        try:
+            if self.__isServer == True:
+                self.__net.listen(self.__port)
+                self.__status = 1
+                self.__action()
+            else:
+                self.__net.connect(self.__ip, self.__port)
+                self.__status = 1
+                self.__action()
+            self.__renderEmoji()
+        except Exception as e:
+            print('error in startGame():', e)
 
     def __action(self):
         if self.__status == 2:   # game ended
@@ -111,6 +111,7 @@ class GamePage(QWidget):
             if self.__isServer == True:
                 # remove emoji if its status is 2 (out)
                 i = 0
+                self.__myEmojiListLock.acquire()
                 while i < len(self.__myEmojiList):
                     if self.__myEmojiList[i].getStatus() == 2:
                         del self.__myEmojiList[i]
@@ -122,6 +123,7 @@ class GamePage(QWidget):
                 for emoji in self.__emojiList:
                     newEmoji = Emoji(emoji.getX() + self.myOffsetX, emoji.getY() + self.myOffsetY, emoji.getType())
                     self.__myEmojiList.append(newEmoji)
+                self.__myEmojiListLock.release()
 
                 # send new emojiList
                 data = 'new\n'
@@ -135,19 +137,23 @@ class GamePage(QWidget):
             else:
                 # remove emoji if its status is 2 (out)
                 i = 0
+                self.__myEmojiListLock.acquire()
                 while i < len(self.__myEmojiList):
                     if self.__myEmojiList[i].getStatus() == 2:
                         del self.__myEmojiList[i]
                         continue
                     i = i + 1
+                self.__myEmojiListLock.release()
 
                 # send score to enemy
                 data = 'score\n' + str(self.__myScore) + '\n'
                 self.__net.sendData(data)
+
+                self.printEmojiList()
         except Exception as e:
             self.__status = 2
             print('error in __action():', e)
-        self.__actioner = threading.Timer(1, self.__action)
+        self.__actioner = threading.Timer(0.8, self.__action)
         self.__actioner.start()
  
     # set result that predicted by image module
@@ -172,14 +178,16 @@ class GamePage(QWidget):
 
     def __renderEmoji(self):
         self.renderSignal.emit()
-        self.__renderEmojiRunner = threading.Timer(0.04, self.__renderEmoji)
+        self.__renderEmojiRunner = threading.Timer(0.02, self.__renderEmoji)
         self.__renderEmojiRunner.start()
 
     @pyqtSlot()
     def __renderEmojiAction(self):
         if self.__status == 1:
+            self.__myEmojiListLock.acquire()
             for emoji in self.__myEmojiList:
                 self.setEmoji(emoji)
+            self.__myEmojiListLock.release()
     
     # set emoji or add emoji on screen
     def setEmoji(self, e):
@@ -194,8 +202,15 @@ class GamePage(QWidget):
             e.graphicPixmapItem.setPos(e.getX(), e.getY())
             if e.getY() > self.myOffsetY + self.maxY:
                 e.setStatus(2)
+                self.__scene.removeItem(e.graphicPixmapItem)
+            elif e.getType() == self.__matchedEmoji:
+                self.__myScore = self.__myScore + 10
+                self.__myScoreLCD.display(self.__myScore)
+                e.setStatus(2)
+                self.__scene.removeItem(e.graphicPixmapItem)
         else:   # out
-            self.__scene.removeItem(e.graphicPixmapItem)
+            pass
+        self.__enemyScoreLCD.display(self.__enemyScore)
             
     def __randomGenEmoji(self):
         if len(self.__emojiList) >= self.maxEmojiNum:
@@ -207,7 +222,9 @@ class GamePage(QWidget):
             self.__emojiList = tempList
 
     def myEmojiAdd(self, emoji):
+        self.__myEmojiListLock.acquire()
         self.__myEmojiList.append(emoji)
+        self.__myEmojiListLock.release()
 
     def setEnemyScore(self, score):
         self.__enemyScore = score
@@ -219,14 +236,19 @@ class GamePage(QWidget):
 
     def closeEvent(self, event):
         self.__status = 2
-        # self.__actioner.cancel()
-        # self.__renderEmojiRunner.cancel()
-
+        if hasattr(self, '_GamePage__actioner'):
+            self.__actioner.cancel()
+        if hasattr(self, '_GamePage__renderEmojiRunner'):
+            self.__renderEmojiRunner.cancel()
+        if self.__net.isListening():
+            self.__net.stopListen()
+        '''
         self.__CFIRunner.cancel()
         self.__camera.stop()
         self.__camera.release()
         self.__camera.captureThread.cancel()
         self.__camera.predictThread.cancel()
+        '''
         try:
             self.__net.close()
         except:

@@ -5,7 +5,7 @@ from PyQt5.QtGui import QFont
 import sys
 
 from connectionSetupPage import ConnectionSetupPage
-from imageModule import ImgModule
+#from imageModule import ImgModule
 
 
 class StartMenuPage(QWidget):
@@ -18,8 +18,8 @@ class StartMenuPage(QWidget):
         self.resize(self.__WIDTH, self.__HEIGHT)
         self.setWindowTitle("Start Menu")
         
-        self.camera = ImgModule()
-        self.camera.loadModelThread.start()
+        #self.camera = ImgModule()
+        #self.camera.loadModelThread.start()
 
         self.createLabel()
         self.createBtn()
@@ -49,7 +49,8 @@ class StartMenuPage(QWidget):
         btn2.clicked.connect(self.closeScr)
 
     def jumpPage(self):
-        self.__nextPage = ConnectionSetupPage(self.camera)
+        #self.__nextPage = ConnectionSetupPage(self.camera)
+        self.__nextPage = ConnectionSetupPage(None)
         self.hide()
         self.__nextPage.show()
 
