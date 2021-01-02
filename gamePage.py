@@ -13,6 +13,8 @@ from emoji import Emoji
 class GamePage(QWidget):
     changePixmapItem = pyqtSignal(QImage)
     renderSignal = pyqtSignal()
+    timeSignal = pyqtSignal()
+    gameEnd = pyqtSignal()
     maxEmojiNum = 8
     maxEmojiGen = 1
     maxX = 450
@@ -37,6 +39,8 @@ class GamePage(QWidget):
         
         self.changePixmapItem.connect(self.setFaceImage)
         self.renderSignal.connect(self.__renderEmojiAction)
+        self.timeSignal.connect(self.__displayTimeAction)
+        self.gameEnd.connect(self.__finalResult)
         self.__isServer = isServer
         self.__ip = ip
         self.__myScore = 0
@@ -78,7 +82,6 @@ class GamePage(QWidget):
         # self.__CFIrunner.start()
         #self.__convertFaceImage()
 
-
     def createLCD(self):
         self.__timeLCD = QLCDNumber(self)
         self.__timeLCD.setGeometry(QRect(470, 60, 151, 91))
@@ -94,18 +97,20 @@ class GamePage(QWidget):
         try:
             if self.__isServer == True:
                 self.__net.listen(self.__port)
-                self.__status = 1
-                self.__action()
             else:
                 self.__net.connect(self.__ip, self.__port)
-                self.__status = 1
-                self.__action()
+            self.__status = 1
+            self.__startTime = time.time()
+            self.__displayTime()
+            self.__action()
             self.__renderEmoji()
         except Exception as e:
             print('error in startGame():', e)
 
     def __action(self):
         if self.__status == 2:   # game ended
+            data = 'final\n' + str(self.__myScore) + '\n'
+            self.__net.sendData(data)
             return
         try:
             if self.__isServer == True:
@@ -148,13 +153,10 @@ class GamePage(QWidget):
                 # send score to enemy
                 data = 'score\n' + str(self.__myScore) + '\n'
                 self.__net.sendData(data)
-
-                self.printEmojiList()
+            self.__actioner = threading.Timer(0.8, self.__action)
+            self.__actioner.start()
         except Exception as e:
-            self.__status = 2
             print('error in __action():', e)
-        self.__actioner = threading.Timer(0.8, self.__action)
-        self.__actioner.start()
  
     # set result that predicted by image module
     def setResult(self, emojiType):
@@ -188,6 +190,19 @@ class GamePage(QWidget):
             for emoji in self.__myEmojiList:
                 self.setEmoji(emoji)
             self.__myEmojiListLock.release()
+
+    def __displayTime(self):
+        self.__elapseTime = time.time() - self.__startTime
+        self.timeSignal.emit()
+        if int(self.__elapseTime) == 10:
+            self.__status = 2
+            return
+        self.__displayTimeRunner = threading.Timer(1, self.__displayTime)
+        self.__displayTimeRunner.start()
+
+    @pyqtSlot()
+    def __displayTimeAction(self):
+        self.__timeLCD.display(int(self.__elapseTime))
     
     # set emoji or add emoji on screen
     def setEmoji(self, e):
@@ -229,17 +244,28 @@ class GamePage(QWidget):
     def setEnemyScore(self, score):
         self.__enemyScore = score
 
+    @pyqtSlot()
+    def __finalResult(self):
+        # display final result (self.__myScore, self.__enemyScore)
+        print('final result get')
+        try:
+            self.__net.close()
+        except:
+            pass
+
     def printEmojiList(self):
         print('len: ', len(self.__myEmojiList))
         for emoji in self.__myEmojiList:
             print('{},{} {}'.format(emoji.getX(), emoji.getY(), emoji.getType()))
 
     def closeEvent(self, event):
-        self.__status = 2
         if hasattr(self, '_GamePage__actioner'):
             self.__actioner.cancel()
         if hasattr(self, '_GamePage__renderEmojiRunner'):
             self.__renderEmojiRunner.cancel()
+        if hasattr(self, '_GamePage__displayTimeRunner'):
+            self.__displayTimeRunner.cancel()
+        self.__status = 2
         if self.__net.isListening():
             self.__net.stopListen()
         '''

@@ -67,6 +67,9 @@ class NetModule:
                 self.ui.myEmojiAdd(emoji)
         elif data[0] == 'score':
             self.ui.setEnemyScore(int(data[1]))
+        elif data[0] == 'final':
+            self.ui.setEnemyScore(int(data[1]))
+            self.ui.gameEnd.emit()
 
     def send(self, data, isByte=False):
         totalsent = 0
