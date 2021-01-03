@@ -30,14 +30,38 @@ class ConnectionSetupPage(QWidget):
     def createBtn(self):
         self.__font.setPointSize(15)
 
+        button_style = """
+            QPushButton {
+                border: 2px solid #ffffff;
+                border-radius: 10px;
+                background-color: #f0b41d;
+                color: #000000;
+                
+                min-width: 80px;
+            }
+            
+            QPushButton:hover {
+                color: #ffffff;
+                background-color: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 1,
+                                                  stop: 0 #000000, stop: 1 #00aaff);
+            }
+            
+            QPushButton:pressed {
+                background-color: #FFA823;
+                color: #000000;
+            }
+        """
+
         btn = QPushButton("Server", self)
         btn.setGeometry(QRect(100, 60, 131, 41))
         btn.setFont(self.__font)
+        btn.setStyleSheet(button_style)
         btn.clicked.connect(self.chooseServer)
 
         btn2 = QPushButton("Client", self)
         btn2.setGeometry(QRect(100, 130, 131, 41))
         btn2.setFont(self.__font)
+        btn2.setStyleSheet(button_style)
         btn2.clicked.connect(self.chooseClient)
 
     def chooseServer(self):

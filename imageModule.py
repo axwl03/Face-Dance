@@ -38,7 +38,7 @@ class ImgModule:
         with self.__thread_graph.as_default():
             self.__thread_session = Session()
             with self.__thread_session.as_default():
-                self.__model = keras.models.load_model('weights-50-0.87.h5', compile=False)
+                self.__model = keras.models.load_model('weights-28-0.77.h5', compile=False)
                 self.__graph = tf.compat.v1.get_default_graph()
                 self.__predictLegal = True
                 print('loading done.')
