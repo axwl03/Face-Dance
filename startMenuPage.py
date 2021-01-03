@@ -5,7 +5,7 @@ from PyQt5.QtGui import QFont, QPalette, QBrush, QPixmap
 import sys
 
 from connectionSetupPage import ConnectionSetupPage
-#from imageModule import ImgModule
+from imageModule import ImgModule
 
 
 class StartMenuPage(QWidget):
@@ -19,8 +19,8 @@ class StartMenuPage(QWidget):
         self.setWindowTitle("Start Menu")
         self.setObjectName("Form")
         
-        #self.camera = ImgModule()
-        #self.camera.loadModelThread.start()
+        self.camera = ImgModule()
+        self.camera.loadModelThread.start()
 
         palette = QPalette()
         palette.setBrush(QPalette.Background, QBrush(QPixmap("resources/background.jpg")))
@@ -78,8 +78,7 @@ class StartMenuPage(QWidget):
         btn2.clicked.connect(self.closeScr)
 
     def jumpPage(self):
-        #self.__nextPage = ConnectionSetupPage(self.camera)
-        self.__nextPage = ConnectionSetupPage(None)
+        self.__nextPage = ConnectionSetupPage(self.camera)
         self.hide()
         self.__nextPage.show()
 

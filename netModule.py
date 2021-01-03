@@ -44,13 +44,13 @@ class NetModule:
         try:
             while True:
                 msgType = self.recv(1)
-                print('msgType = ' + msgType)
+                # print('msgType = ' + msgType)
                 if msgType == 'e':
                     break
                 elif msgType == 'd':    # data
                     length = int.from_bytes(self.recv(4, True), byteorder='little')
                     data = self.recv(length)
-                    print('Data = ' + data)
+                    # print('Data = ' + data)
                     self.__handleData(data)
             self.__socket.close()
         except Exception as e:
@@ -81,7 +81,7 @@ class NetModule:
             if sent == 0:
                 raise RuntimeError('send failed')
             totalsent = totalsent + sent
-            print('sent: {}, totalsent: {}'.format(str(sent), str(totalsent)))
+            # print('sent: {}, totalsent: {}'.format(str(sent), str(totalsent)))
 
     def sendData(self, data):
         self.send('d')
@@ -98,7 +98,7 @@ class NetModule:
                 raise RuntimeError('recv failed')
             totalrecd = totalrecd + len(recd)
             data = data + recd
-            print('recd: {}, totalrecd: {}'.format(str(len(recd)), str(totalrecd)))
+            # print('recd: {}, totalrecd: {}'.format(str(len(recd)), str(totalrecd)))
         if isByte == False:
             return data.decode('utf-8')
         else:

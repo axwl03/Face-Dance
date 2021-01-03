@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QLCDNumber, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem
 from PyQt5.QtCore import QRect, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QFont, QImage, QPixmap
+from PyQt5.QtGui import QFont, QImage, QPixmap, QPalette, QBrush
 
 import threading
 import cv2
@@ -23,8 +23,8 @@ class GamePage(QWidget):
     myOffsetY = 200
     duration = 30
     shift = 4
-    width = 1078
-    height = 767
+    width = 1100
+    height = 800
 
     def __init__(self, isServer, ip, camera):
         self.__status = 0   # 0: not started, 1: started, 2: ended
@@ -48,39 +48,30 @@ class GamePage(QWidget):
 
         self.createLCD()
         self.__graphicsView = QGraphicsView(self)
-        self.__graphicsView.setGeometry(QRect(20, 160, 1031, 591))
+        self.__graphicsView.setGeometry(QRect(33, 160, 1031, 591))
         self.__scene = QGraphicsScene(self)
         self.__scene.setSceneRect(0, 0, 1000, 589)
         self.__graphicsView.setScene(self.__scene)
-
         self.__faceImage = QGraphicsPixmapItem()
         self.__faceImage.setPos(50, 50)
         self.__scene.addItem(self.__faceImage)
+        palette = QPalette()
+        palette.setBrush(QPalette.Background, QBrush(QPixmap("resources/game_background.jpg")))
+        self.setPalette(palette)
 
         self.__matchedEmoji = Emoji.NONE
         self.__emojiList = []
         self.__myEmojiList = []
         self.__myEmojiListLock = threading.Lock()
         self.__port = 8080
-
-        self.__camera = camera
-
-        # self.__CFIrunner = threading.Timer(1, self.convertFaceImage)
-
         self.__net = NetModule(self)
         self.__runner = threading.Thread(target=self.startGame)
         self.__runner.start()
-    
-        # self.__camera.frame = None # for setFaceImage
-        # self.__camera.state = 'None' # for setResult
 
-        '''
+        self.__camera = camera
         self.__camera.setFPS(1)
         self.__camera.capture()
-        self.__camera.predict()
-        '''
-        # self.__CFIrunner.start()
-        #self.__convertFaceImage()
+        self.__convertFaceImage()
 
     def createLCD(self):
         self.__timeLCD = QLCDNumber(self)
@@ -99,6 +90,7 @@ class GamePage(QWidget):
                 self.__net.listen(self.__port)
             else:
                 self.__net.connect(self.__ip, self.__port)
+            self.__camera.predict()
             self.__status = 1
             self.__startTime = time.time()
             self.__displayTime()
@@ -194,7 +186,7 @@ class GamePage(QWidget):
     def __displayTime(self):
         self.__elapseTime = time.time() - self.__startTime
         self.timeSignal.emit()
-        if int(self.__elapseTime) == 10:
+        if int(self.__elapseTime) == self.duration:
             self.__status = 2
             return
         self.__displayTimeRunner = threading.Timer(1, self.__displayTime)
@@ -268,13 +260,13 @@ class GamePage(QWidget):
         self.__status = 2
         if self.__net.isListening():
             self.__net.stopListen()
-        '''
+        
         self.__CFIRunner.cancel()
         self.__camera.stop()
         self.__camera.release()
         self.__camera.captureThread.cancel()
         self.__camera.predictThread.cancel()
-        '''
+        
         try:
             self.__net.close()
         except:

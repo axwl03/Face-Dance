@@ -12,7 +12,6 @@ class ImgModule:
         self.__cap = cv2.VideoCapture(0)
         self.__interval = 0.03 # 30ms
         self.__emotionMap = {0: 'None', 1: 'Angry', 2: 'Happy', 3: 'Sad', 4: 'Surprise'}
-        # self.__emotionMap = {0: 'Angry', 1: 'Disgust', 2: 'Fear', 3: 'Happy', 4: 'Sad', 5:'Surprise', 6:'None'}
 
         self.__model = None
         self.__thread_graph = None
@@ -74,7 +73,6 @@ class ImgModule:
             print('res : {}'.format(self.__emotionMap[self.state]))
 
             self.__writeLegal = True
-            # time.sleep(self.__interval)
         else:
             self.__lock2.release()
         self.predictThread = threading.Timer(1, self.predict)
@@ -96,12 +94,9 @@ class ImgModule:
     def stop(self):
         self.__lock.acquire()
         self.__capLegal = False
-        # self.__predictLegal = False
+        self.__predictLegal = False
         self.__lock.release()
 
     def reset(self):
         self.__capLegal = True
         self.__predictLegal = True
-
-#imgModule = ImgModule()
-#imgModule.start()
