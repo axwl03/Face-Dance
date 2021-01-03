@@ -68,8 +68,10 @@ class ImgModule:
             self.__writeLegal = False
             with self.__graph.as_default():
                 with self.__thread_session.as_default():
+                    res = self.__model.predict(self.__inputImg)
                     self.state = self.__model.predict_classes(self.__inputImg)[0]
             
+            self.state = self.state if res[0][self.state] > 0.5 else 0
             print('res : {}'.format(self.__emotionMap[self.state]))
 
             self.__writeLegal = True
@@ -100,3 +102,4 @@ class ImgModule:
     def reset(self):
         self.__capLegal = True
         self.__predictLegal = True
+
