@@ -1,11 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QLCDNumber, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QGraphicsItem
 from PyQt5.QtCore import QRect, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QFont, QImage, QPixmap, QPalette, QBrush
+from PyQt5.QtGui import QFont, QImage, QPixmap, QPalette, QBrush, QPen
+from PyQt5 import QtMultimedia, QtCore
 
 import threading
 import cv2
 import time
 import random
+import os
 
 from netModule import NetModule
 from emoji import Emoji
@@ -17,26 +19,21 @@ class GamePage(QWidget):
     gameEnd = pyqtSignal()
     maxEmojiNum = 8
     maxEmojiGen = 1
-    maxX = 450
-    maxY = 500
-    myOffsetX = 500
-    myOffsetY = 200
+    maxX = 550
+    maxY = 450
+    myOffsetX = 650
+    myOffsetY = 50
     duration = 30
     shift = 4
-    width = 1100
+    width = 1300
     height = 800
 
-    def __init__(self, isServer, ip, camera):
+    def __init__(self, isServer, ip, camera, musicPlayer):
         self.__status = 0   # 0: not started, 1: started, 2: ended
-        self.__font = QFont()
-        self.__font.setFamily("Arial Black")
-        self.__font.setPointSize(18)
-        self.__font.setBold(True)
-        self.__font.setWeight(75)
         super(GamePage, self).__init__()
         self.resize(self.width, self.height)
         self.setWindowTitle("Game Page")
-        
+        self.setFixedSize(self.size())
         self.changePixmapItem.connect(self.setFaceImage)
         self.renderSignal.connect(self.__renderEmojiAction)
         self.timeSignal.connect(self.__displayTimeAction)
@@ -48,17 +45,17 @@ class GamePage(QWidget):
 
         self.createLCD()
         self.__graphicsView = QGraphicsView(self)
-        self.__graphicsView.setGeometry(QRect(33, 160, 1031, 591))
+        self.__graphicsView.setGeometry(QRect(0, 160, 1300, 600))
+        self.__graphicsView.setStyleSheet("background: transparent; border:0px")
         self.__scene = QGraphicsScene(self)
-        self.__scene.setSceneRect(0, 0, 1000, 589)
+        self.__scene.setSceneRect(0, 0, 1250, 550)
         self.__graphicsView.setScene(self.__scene)
         self.__faceImage = QGraphicsPixmapItem()
-        self.__faceImage.setPos(50, 50)
+        self.__faceImage.setPos(-10, 50)
         self.__scene.addItem(self.__faceImage)
         palette = QPalette()
         palette.setBrush(QPalette.Background, QBrush(QPixmap("resources/game_background.jpg")))
         self.setPalette(palette)
-
         self.__matchedEmoji = Emoji.NONE
         self.__emojiList = []
         self.__myEmojiList = []
@@ -72,17 +69,50 @@ class GamePage(QWidget):
         self.__camera.setFPS(1)
         self.__camera.capture()
         self.__convertFaceImage()
+        self.__musicPlayer = musicPlayer
+        # self.__musicPlayer.stop()
+        filepath = 'resources/gameMusic.mp3'
+        fullpath = os.path.join(os.getcwd(), filepath)
+        url = QtCore.QUrl.fromLocalFile(fullpath)
+        self.__content = QtMultimedia.QMediaContent(url)
 
     def createLCD(self):
+        myLCD_style = """
+            QLCDNumber {
+                background-color: rgb(0, 0, 0);
+                border: 2px solid rgb(113, 113, 113);
+                border-width: 2px;
+                border-radius: 15px;
+                color: rgb(42, 232, 35);
+            }
+        """
+        enemyLCD_style = """
+            QLCDNumber {
+                background-color: rgb(0, 0, 0);
+                border: 2px solid rgb(113, 113, 113);
+                border-width: 2px;
+                border-radius: 15px;
+                color: rgb(232, 35, 35);
+            }
+        """
+        timeLCD_style = """
+            QLCDNumber {
+                background-color: rgb(0, 0, 0);
+                border: 2px solid rgb(113, 113, 113);
+                border-width: 2px;
+                border-radius: 20px;
+                color: rgb(255, 255, 255);
+            }
+        """
         self.__timeLCD = QLCDNumber(self)
-        self.__timeLCD.setGeometry(QRect(470, 60, 151, 91))
-        self.__timeLCD.setFont(self.__font)
+        self.__timeLCD.setGeometry(QRect(560, 55, 200, 100)) #(QRect(580, 55, 140, 100))
+        self.__timeLCD.setStyleSheet(timeLCD_style)
         self.__enemyScoreLCD = QLCDNumber(self)
-        self.__enemyScoreLCD.setGeometry(QRect(800, 100, 121, 51))
-        self.__enemyScoreLCD.setFont(self.__font)
+        self.__enemyScoreLCD.setGeometry(QRect(900, 80, 140, 70))
+        self.__enemyScoreLCD.setStyleSheet(enemyLCD_style)
         self.__myScoreLCD = QLCDNumber(self)
-        self.__myScoreLCD.setGeometry(QRect(170, 100, 121, 51))
-        self.__myScoreLCD.setFont(self.__font)
+        self.__myScoreLCD.setGeometry(QRect(270, 80, 140, 70))
+        self.__myScoreLCD.setStyleSheet(myLCD_style)
 
     def startGame(self):
         try:
@@ -96,6 +126,9 @@ class GamePage(QWidget):
             self.__displayTime()
             self.__action()
             self.__renderEmoji()
+            self.__musicPlayer.setMedia(self.__content)
+            # self.__musicplayer.setVolume(50.0)
+            self.__musicPlayer.play()
         except Exception as e:
             print('error in startGame():', e)
 
@@ -103,6 +136,8 @@ class GamePage(QWidget):
         if self.__status == 2:   # game ended
             data = 'final\n' + str(self.__myScore) + '\n'
             self.__net.sendData(data)
+            self.__musicPlayer.stop()
+            print("game end")
             return
         try:
             if self.__isServer == True:
@@ -161,7 +196,7 @@ class GamePage(QWidget):
             h, w, ch = rgbImage.shape
             bytesPerLine = ch * w
             convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
-            p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+            p = convertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio) #(640,480) #
             self.changePixmapItem.emit(p)
             self.__CFIRunner = threading.Timer(0.04, self.__convertFaceImage)
             self.__CFIRunner.start()
@@ -169,6 +204,7 @@ class GamePage(QWidget):
     @pyqtSlot(QImage)
     def setFaceImage(self, image):
         self.__faceImage.setPixmap(QPixmap.fromImage(image))
+        self.setResult(self.__camera.state)
 
     def __renderEmoji(self):
         self.renderSignal.emit()
@@ -186,7 +222,7 @@ class GamePage(QWidget):
     def __displayTime(self):
         self.__elapseTime = time.time() - self.__startTime
         self.timeSignal.emit()
-        if int(self.__elapseTime) == self.duration:
+        if int(self.__elapseTime) >= self.duration:
             self.__status = 2
             return
         self.__displayTimeRunner = threading.Timer(1, self.__displayTime)
@@ -194,7 +230,7 @@ class GamePage(QWidget):
 
     @pyqtSlot()
     def __displayTimeAction(self):
-        self.__timeLCD.display(int(self.__elapseTime))
+        self.__timeLCD.display(self.duration - int(self.__elapseTime))
     
     # set emoji or add emoji on screen
     def setEmoji(self, e):
