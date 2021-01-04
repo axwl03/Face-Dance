@@ -62,8 +62,6 @@ class GamePage(QWidget):
         self.__myEmojiListLock = threading.Lock()
         self.__port = 8080
         self.__net = NetModule(self)
-        self.__runner = threading.Thread(target=self.startGame)
-        self.__runner.start()
 
         self.__camera = camera
         self.__camera.setFPS(5)
@@ -75,6 +73,9 @@ class GamePage(QWidget):
         fullpath = os.path.join(os.getcwd(), filepath)
         url = QtCore.QUrl.fromLocalFile(fullpath)
         self.__content = QtMultimedia.QMediaContent(url)
+
+        self.__runner = threading.Thread(target=self.startGame)
+        self.__runner.start()
 
     def createLCD(self):
         myLCD_style = """
@@ -115,27 +116,30 @@ class GamePage(QWidget):
         self.__myScoreLCD.setStyleSheet(myLCD_style)
 
     def startGame(self):
-        #try:
-        if self.__isServer == True:
-            self.__net.listen(self.__port)
-        else:
-            self.__net.connect(self.__ip, self.__port)
-        self.__camera.predict()
-        self.__status = 1
-        self.__startTime = time.time()
-        self.__displayTime()
-        self.__action()
-        self.__renderEmoji()
-        self.__musicPlayer.setMedia(self.__content)
-        # self.__musicplayer.setVolume(50.0)
-        self.__musicPlayer.play()
-        #except Exception as e:
-            #print('error in startGame():', e)
+        try:
+            if self.__isServer == True:
+                self.__net.listen(self.__port)
+            else:
+                self.__net.connect(self.__ip, self.__port)
+            self.__camera.predict()
+            self.__status = 1
+            self.__startTime = time.time()
+            self.__displayTime()
+            self.__action()
+            self.__renderEmoji()
+            self.__musicPlayer.setMedia(self.__content)
+            # self.__musicplayer.setVolume(50.0)
+            self.__musicPlayer.play()
+        except Exception as e:
+            print('error in startGame():', e)
 
     def __action(self):
         if self.__status == 2:   # game ended
             data = 'final\n' + str(self.__myScore) + '\n'
-            self.__net.sendData(data)
+            try:
+                self.__net.sendData(data)
+            except:
+                pass
             self.__musicPlayer.stop()
             self.gameEnd.emit()
             return

@@ -68,8 +68,9 @@ class ImgModule:
             self.__writeLegal = False
             with self.__graph.as_default():
                 with self.__thread_session.as_default():
-                    res = self.__model.predict(self.__inputImg)
-                    self.state = np.where(np.isclose(res[0],max(res[0])))[0][0]
+                    if self.__inputImg is not None:
+                        res = self.__model.predict(self.__inputImg)
+                        self.state = np.where(np.isclose(res[0],max(res[0])))[0][0]
             
             self.state = self.state if res[0][self.state] > 0.5 else 0
             print('res : {}'.format(self.__emotionMap[self.state]))

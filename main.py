@@ -14,7 +14,7 @@ if __name__ == '__main__':
     player = QtMultimedia.QMediaPlayer()
     player.setMedia(content)
     player.setVolume(50.0)
-    # player.play()
+    player.play()
     startMenuPage = StartMenuPage(player)
     startMenuPage.show()
     sys.exit(app.exec_())
