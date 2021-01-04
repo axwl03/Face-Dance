@@ -66,7 +66,7 @@ class GamePage(QWidget):
         self.__runner.start()
 
         self.__camera = camera
-        self.__camera.setFPS(1)
+        self.__camera.setFPS(5)
         self.__camera.capture()
         self.__convertFaceImage()
         self.__musicPlayer = musicPlayer
@@ -137,7 +137,7 @@ class GamePage(QWidget):
             data = 'final\n' + str(self.__myScore) + '\n'
             self.__net.sendData(data)
             self.__musicPlayer.stop()
-            print("game end")
+            self.gameEnd.emit()
             return
         try:
             if self.__isServer == True:
@@ -224,6 +224,7 @@ class GamePage(QWidget):
         self.timeSignal.emit()
         if int(self.__elapseTime) >= self.duration:
             self.__status = 2
+
             return
         self.__displayTimeRunner = threading.Timer(1, self.__displayTime)
         self.__displayTimeRunner.start()
@@ -231,7 +232,7 @@ class GamePage(QWidget):
     @pyqtSlot()
     def __displayTimeAction(self):
         self.__timeLCD.display(self.duration - int(self.__elapseTime))
-    
+
     # set emoji or add emoji on screen
     def setEmoji(self, e):
         if e.getStatus() == 0:  # new
@@ -274,8 +275,25 @@ class GamePage(QWidget):
 
     @pyqtSlot()
     def __finalResult(self):
-        # display final result (self.__myScore, self.__enemyScore)
-        print('final result get')
+        if self.__myScore > self.__enemyScore: # win
+            pixmap = QPixmap("resources/win.png")
+            QGPI = QGraphicsPixmapItem()
+            QGPI.setPixmap(pixmap) #.scaled(50, 50)
+            QGPI.setPos(150, 160)
+            self.__scene.addItem(QGPI)
+
+        elif self.__myScore < self.__enemyScore: # lose
+            pixmap = QPixmap("resources/lose.png")
+            QGPI = QGraphicsPixmapItem()
+            QGPI.setPixmap(pixmap) #.scaled(50, 50)
+            QGPI.setPos(150, 160)
+            self.__scene.addItem(QGPI)
+        else:
+            pixmap = QPixmap("resources/tie.png")
+            QGPI = QGraphicsPixmapItem()
+            QGPI.setPixmap(pixmap) #.scaled(50, 50)
+            QGPI.setPos(150, 160)
+            self.__scene.addItem(QGPI)
         try:
             self.__net.close()
         except:
@@ -297,11 +315,14 @@ class GamePage(QWidget):
         if self.__net.isListening():
             self.__net.stopListen()
         
-        self.__CFIRunner.cancel()
+        if hasattr(self, '_GamePage__CFIRunner'):
+            self.__CFIRunner.cancel()
         self.__camera.stop()
         self.__camera.release()
-        self.__camera.captureThread.cancel()
-        self.__camera.predictThread.cancel()
+        if hasattr(self.__camera, 'captureThread'):
+            self.__camera.captureThread.cancel()
+        if hasattr(self.__camera, 'predictThread'):
+            self.__camera.predictThread.cancel()
         
         try:
             self.__net.close()

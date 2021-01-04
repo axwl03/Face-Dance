@@ -77,7 +77,7 @@ class ImgModule:
             self.__writeLegal = True
         else:
             self.__lock2.release()
-        self.predictThread = threading.Timer(1, self.predict)
+        self.predictThread = threading.Timer(self.__interval, self.predict)
         self.predictThread.start()
 
     def setFPS(self, f):
