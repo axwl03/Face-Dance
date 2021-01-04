@@ -115,22 +115,22 @@ class GamePage(QWidget):
         self.__myScoreLCD.setStyleSheet(myLCD_style)
 
     def startGame(self):
-        try:
-            if self.__isServer == True:
-                self.__net.listen(self.__port)
-            else:
-                self.__net.connect(self.__ip, self.__port)
-            self.__camera.predict()
-            self.__status = 1
-            self.__startTime = time.time()
-            self.__displayTime()
-            self.__action()
-            self.__renderEmoji()
-            self.__musicPlayer.setMedia(self.__content)
-            # self.__musicplayer.setVolume(50.0)
-            self.__musicPlayer.play()
-        except Exception as e:
-            print('error in startGame():', e)
+        #try:
+        if self.__isServer == True:
+            self.__net.listen(self.__port)
+        else:
+            self.__net.connect(self.__ip, self.__port)
+        self.__camera.predict()
+        self.__status = 1
+        self.__startTime = time.time()
+        self.__displayTime()
+        self.__action()
+        self.__renderEmoji()
+        self.__musicPlayer.setMedia(self.__content)
+        # self.__musicplayer.setVolume(50.0)
+        self.__musicPlayer.play()
+        #except Exception as e:
+            #print('error in startGame():', e)
 
     def __action(self):
         if self.__status == 2:   # game ended
@@ -278,22 +278,36 @@ class GamePage(QWidget):
         if self.__myScore > self.__enemyScore: # win
             pixmap = QPixmap("resources/win.png")
             QGPI = QGraphicsPixmapItem()
-            QGPI.setPixmap(pixmap) #.scaled(50, 50)
+            QGPI.setPixmap(pixmap)
             QGPI.setPos(150, 160)
             self.__scene.addItem(QGPI)
 
         elif self.__myScore < self.__enemyScore: # lose
             pixmap = QPixmap("resources/lose.png")
             QGPI = QGraphicsPixmapItem()
-            QGPI.setPixmap(pixmap) #.scaled(50, 50)
-            QGPI.setPos(150, 160)
+            QGPI.setPixmap(pixmap)
+            QGPI.setPos(100, 160)
             self.__scene.addItem(QGPI)
         else:
             pixmap = QPixmap("resources/tie.png")
             QGPI = QGraphicsPixmapItem()
-            QGPI.setPixmap(pixmap) #.scaled(50, 50)
+            QGPI.setPixmap(pixmap)
             QGPI.setPos(150, 160)
             self.__scene.addItem(QGPI)
+        if hasattr(self, '_GamePage__actioner'):
+            self.__actioner.cancel()
+        if hasattr(self, '_GamePage__renderEmojiRunner'):
+            self.__renderEmojiRunner.cancel()
+        if hasattr(self, '_GamePage__displayTimeRunner'):
+            self.__displayTimeRunner.cancel()
+        if hasattr(self, '_GamePage__CFIRunner'):
+            self.__CFIRunner.cancel()
+        self.__camera.stop()
+        self.__camera.release()
+        if hasattr(self.__camera, 'captureThread'):
+            self.__camera.captureThread.cancel()
+        if hasattr(self.__camera, 'predictThread'):
+            self.__camera.predictThread.cancel()
         try:
             self.__net.close()
         except:
