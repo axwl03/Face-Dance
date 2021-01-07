@@ -141,7 +141,6 @@ class GamePage(QWidget):
             except:
                 pass
             self.__musicPlayer.stop()
-            self.gameEnd.emit()
             return
         try:
             if self.__isServer == True:
