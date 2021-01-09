@@ -1,26 +1,20 @@
-from PyQt5.QtWidgets import QApplication, QWidget
-from startMenuPage import Ui_Form
-from connection import SecondPage
-import sys
+from PyQt5.QtWidgets import QApplication
+from PyQt5 import QtMultimedia, QtCore
 
-class MainPage(QWidget):
-    def __init__(self):
-        super(MainPage, self).__init__()
-        self.ui = Ui_Form()
-        self.ui.setupUi(self)
-        self.ui.pushButton.clicked.connect(self.jumpPage)
-        self.ui.pushButton_2.clicked.connect(self.closescr)
+import sys, os
 
-    def jumpPage(self):
-        self.nextPage = SecondPage()
-        mainPage.hide()
-        self.nextPage.show()
-
-    def closescr(self):
-        sys.exit()
+from startMenuPage import StartMenuPage
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)    
-    mainPage = MainPage()
-    mainPage.show()
+    app = QApplication(sys.argv)
+    filepath = 'resources/color-X.mp3'
+    fullpath = os.path.join(os.getcwd(), filepath)
+    url = QtCore.QUrl.fromLocalFile(fullpath)
+    content = QtMultimedia.QMediaContent(url)
+    player = QtMultimedia.QMediaPlayer()
+    player.setMedia(content)
+    player.setVolume(50.0)
+    player.play()
+    startMenuPage = StartMenuPage(player)
+    startMenuPage.show()
     sys.exit(app.exec_())

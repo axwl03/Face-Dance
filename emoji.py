@@ -1,3 +1,5 @@
+from PyQt5 import QtCore, QtGui
+
 class Emoji:
     NONE = 0
     ANGRY = 1
@@ -10,6 +12,15 @@ class Emoji:
         self.__y = y
         self.__type = emojiType
         self.__status = 0   # 0: new, 1: exist, 2: out
+
+    def getPic(self):
+        return {
+                0:'none',
+                1:QtGui.QPixmap('resources/angry.png'),
+                2:QtGui.QPixmap('resources/happy.png'),
+                3:QtGui.QPixmap('resources/sad.png'),
+                4:QtGui.QPixmap('resources/surprise.png')
+            }.get(self.__type, "Invalid")
 
     def getStatus(self):
         return self.__status
@@ -41,4 +52,4 @@ class Emoji:
     @staticmethod
     def parseString(string):
         data = string.split()
-        return Emoji(data[0], data[1], data[2])
+        return Emoji(int(data[0]), int(data[1]), int(data[2]))
